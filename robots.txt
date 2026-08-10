@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /privacy.html
+Disallow: /en/privacy.html
+
+Sitemap: https://mro145.ru/sitemap.xml
