@@ -1210,6 +1210,16 @@ h4 {
   gap: var(--s4);
 }
 
+/* Ловушка для спам-ботов: поле не видно человеку, но есть в разметке.
+   display:none не годится — часть ботов такие поля пропускает. */
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .consent {
   display: flex;
   align-items: flex-start;

@@ -10,16 +10,16 @@
   /* -----------------------------------------------------------------------
      КУДА ОТПРАВЛЯТЬ ЗАЯВКИ
 
-     Пока строка пустая, форма проверяет поля и показывает предупреждение,
-     но НИКУДА НЕ ОТПРАВЛЯЕТ данные. Так сделано намеренно: молча теряющая
-     заявки форма хуже, чем честно выключенная.
+     Адрес веб-приложения Google Apps Script, которое дописывает заявку
+     в Google Таблицу. Код обработчика лежит в папке apps-script/Code.gs,
+     порядок установки описан в README.md, раздел «Заявки с формы».
 
-     Как включить отправку — см. README.md, раздел «Форма обратной связи».
-     Примеры значения:
-       "https://formspree.io/f/xxxxxxxx"
-       "/send.php"
+     Если строка пустая, форма проверяет поля и показывает предупреждение,
+     но НИКУДА НЕ ОТПРАВЛЯЕТ данные — молча теряющая заявки форма хуже,
+     чем честно выключенная.
      ----------------------------------------------------------------------- */
-  var FORM_ENDPOINT = "";
+  var FORM_ENDPOINT =
+    "https://script.google.com/macros/s/AKfycbyxrQiYKgRaLO5YWXIOzDWOMNj6OZ989lxeanUyehuNrXbtNqR67iS7CY--MNSt3RxErg/exec";
 
   var isRu = (document.documentElement.lang || "ru").indexOf("en") !== 0;
 
@@ -255,13 +255,21 @@
         say("ok", T.sending);
         if (submit) submit.disabled = true;
 
-        fetch(FORM_ENDPOINT, {
-          method: "POST",
-          headers: { Accept: "application/json" },
-          body: new FormData(form)
-        })
+        var payload = new FormData(form);
+        payload.append("lang", isRu ? "RU" : "EN");
+        payload.append("page", location.pathname + location.hash);
+
+        // Никаких своих заголовков: так браузер шлёт «простой» запрос
+        // без предварительного OPTIONS, который Apps Script не обрабатывает.
+        fetch(FORM_ENDPOINT, { method: "POST", body: payload })
           .then(function (res) {
             if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json().catch(function () {
+              return { ok: true };
+            });
+          })
+          .then(function (result) {
+            if (result && result.ok === false) throw new Error(result.error || "reject");
             form.reset();
             say("ok", T.ok);
           })
