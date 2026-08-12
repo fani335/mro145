@@ -159,7 +159,71 @@
     });
   }
 
-  /* ---------- 4. Форма обратной связи ---------- */
+  /* ---------- 4. Анимация отправки ---------- */
+
+  /**
+   * Крыльчатка из шести лопастей — тот же знак, что и в логотипе.
+   * Собирается поворотом одной лопасти на 60° шесть раз.
+   */
+  function turbineSvg() {
+    var blades = "";
+    for (var i = 0; i < 6; i++) {
+      blades +=
+        '<path d="M16 15.4C13.2 10.6 15.4 4.8 22.6 2.2 26 8 23.4 12.6 16 15.4Z"' +
+        ' transform="rotate(' + i * 60 + ' 16 16)"/>';
+    }
+    return (
+      '<svg class="turbine" viewBox="0 0 32 32" aria-hidden="true">' +
+      blades +
+      '<circle cx="16" cy="16" r="2.4"/></svg>'
+    );
+  }
+
+  function tickSvg() {
+    return (
+      '<svg class="tick" viewBox="0 0 32 32" aria-hidden="true">' +
+      '<path d="M8 16.5l5.5 5.5L24 11" pathLength="30"/></svg>'
+    );
+  }
+
+  /**
+   * Обводка блока формы — четыре отдельные линии, а не один SVG-прямоугольник.
+   * Растянутый прямоугольник со штриховкой рисуется неровно: pathLength
+   * считает длину в исходных координатах, а non-scaling-stroke — в
+   * отрисованных, и пунктир рассыпается. Четыре линии на CSS-трансформациях
+   * дают одинаковую толщину при любой ширине блока.
+   */
+  function traceMarkup() {
+    return '<span class="form-trace" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
+  }
+
+  function buildAnimation(form) {
+    var submit = $('button[type="submit"]', form);
+    var block = form.closest(".form-block");
+
+    if (submit && !$(".btn__label", submit)) {
+      var label = document.createElement("span");
+      label.className = "btn__label";
+      label.textContent = submit.textContent.trim();
+
+      submit.textContent = "";
+      submit.classList.add("btn--submit");
+      submit.appendChild(label);
+      submit.insertAdjacentHTML(
+        "beforeend",
+        '<span class="btn__state btn__state--sending">' + turbineSvg() + "</span>" +
+          '<span class="btn__state btn__state--done">' + tickSvg() + "</span>"
+      );
+    }
+
+    if (block && !$(".form-trace", block)) {
+      block.insertAdjacentHTML("afterbegin", traceMarkup());
+    }
+
+    return block || form;
+  }
+
+  /* ---------- 5. Форма обратной связи ---------- */
 
   function setFieldError(field, message) {
     var box = field.closest(".field");
@@ -215,6 +279,12 @@
     $$("form[data-callback-form]").forEach(function (form) {
       var status = $(".form-status", form);
       var submit = $('button[type="submit"]', form);
+      var stage = buildAnimation(form);
+
+      var setStage = function (name) {
+        stage.classList.toggle("is-sending", name === "sending");
+        stage.classList.toggle("is-done", name === "done");
+      };
 
       var say = function (state, text) {
         if (!status) return;
@@ -231,6 +301,8 @@
         } else {
           setFieldError(el, "");
         }
+        // Новая заявка — прошлая галочка и обводка больше не к месту
+        setStage(null);
       });
 
       form.addEventListener("submit", function (e) {
@@ -253,6 +325,7 @@
         }
 
         say("ok", T.sending);
+        setStage("sending");
         if (submit) submit.disabled = true;
 
         var payload = new FormData(form);
@@ -272,9 +345,11 @@
             if (result && result.ok === false) throw new Error(result.error || "reject");
             form.reset();
             say("ok", T.ok);
+            setStage("done");
           })
           .catch(function () {
             say("err", T.err);
+            setStage(null);
           })
           .then(function () {
             if (submit) submit.disabled = false;
@@ -283,7 +358,7 @@
     });
   }
 
-  /* ---------- 5. Появление блоков при прокрутке ---------- */
+  /* ---------- 6. Появление блоков при прокрутке ---------- */
 
   function initReveal() {
     var items = $$(".reveal");
@@ -313,7 +388,7 @@
     });
   }
 
-  /* ---------- 6. Бегущая строка: дублируем содержимое для бесшовности ---------- */
+  /* ---------- 7. Бегущая строка: дублируем содержимое для бесшовности ---------- */
 
   function initTicker() {
     var track = $(".ticker__track");

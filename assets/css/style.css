@@ -1106,6 +1106,7 @@ h4 {
 /* ---------- 12. Формы ---------- */
 
 .form-block {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   border: 1px solid var(--line);
@@ -1251,6 +1252,184 @@ h4 {
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   line-height: 1.6;
+}
+
+/* ---------- Отправка заявки: турбина и галочка ----------
+   Знак компании — крыльчатка, поэтому индикатор отправки сделан
+   из тех же лопастей: кнопка на время отправки превращается
+   в раскручивающуюся турбину, а по успеху рисуется галочка. */
+
+.btn--submit {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn__label {
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+}
+
+.is-sending .btn__label,
+.is-done .btn__label {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* Слои с турбиной и галочкой лежат поверх подписи кнопки,
+   поэтому её ширина не скачет во время отправки */
+.btn__state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease);
+}
+
+.is-sending .btn__state--sending,
+.is-done .btn__state--done {
+  opacity: 1;
+}
+
+.turbine {
+  width: 26px;
+  height: 26px;
+  color: currentColor;
+}
+
+.turbine path,
+.turbine circle {
+  fill: currentColor;
+}
+
+.is-sending .turbine {
+  transform-origin: 50% 50%;
+  animation: turbine-spin 1.1s cubic-bezier(0.45, 0.12, 0.4, 0.92) infinite;
+}
+
+@keyframes turbine-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tick {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tick path {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+}
+
+.is-done .tick path {
+  animation: tick-draw 0.45s 0.08s var(--ease) forwards;
+}
+
+@keyframes tick-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Линия обводит блок формы, когда заявка ушла:
+   четыре отрезка выезжают по очереди — сверху, справа, снизу, слева */
+.form-trace {
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.is-done .form-trace {
+  opacity: 1;
+}
+
+.form-trace i {
+  position: absolute;
+  display: block;
+  background: var(--blue);
+}
+
+.form-trace i:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.form-trace i:nth-child(2) {
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  transform: scaleY(0);
+  transform-origin: center top;
+}
+
+.form-trace i:nth-child(3) {
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  transform: scaleX(0);
+  transform-origin: right center;
+}
+
+.form-trace i:nth-child(4) {
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  transform: scaleY(0);
+  transform-origin: center bottom;
+}
+
+.is-done .form-trace i {
+  animation: trace-line 0.3s var(--ease) forwards;
+}
+
+.is-done .form-trace i:nth-child(2) {
+  animation-delay: 0.26s;
+}
+
+.is-done .form-trace i:nth-child(3) {
+  animation-delay: 0.52s;
+}
+
+.is-done .form-trace i:nth-child(4) {
+  animation-delay: 0.78s;
+}
+
+@keyframes trace-line {
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Поле в фокусе подчёркивается линией, растущей слева направо.
+   Рисуется фоном самого поля — отдельная разметка не нужна. */
+.field input,
+.field textarea {
+  background-image: linear-gradient(var(--blue), var(--blue));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease),
+    background-size 0.35s var(--ease);
+}
+
+.field input:focus,
+.field textarea:focus {
+  background-size: 100% 2px;
 }
 
 .form-status {
